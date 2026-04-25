@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\Service;
 use App\Notifications\AppointmentNotification;
+use App\Mail\AppointmentBookedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class AppointmentController extends Controller
 {
@@ -64,7 +66,12 @@ class AppointmentController extends Controller
                 'status'           => 'pending',
             ]);
 
-            $appointment->load('service');
+            $appointment->load('service', 'user');
+            
+            // Send email notification
+            Mail::to($appointment->user->email)->send(new AppointmentBookedMail($appointment));
+            
+            // Send database notification
             Auth::user()->notify(new AppointmentNotification($appointment, 'booked'));
 
             DB::commit();
@@ -73,7 +80,7 @@ class AppointmentController extends Controller
             return back()->with('error', 'Failed to book appointment. Please try again.')->withInput();
         }
 
-        return redirect()->route('appointments.index')->with('success', 'Appointment booked successfully!');
+        return redirect()->route('appointments.index')->with('success', 'Appointment booked successfully! A confirmation email has been sent to your inbox.');
     }
 
     public function cancel(Request $request, Appointment $appointment)
