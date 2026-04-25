@@ -5,7 +5,7 @@
 <div class="max-w-2xl mx-auto" x-data="{
     selectedService: '{{ old('service_id') }}',
     selectedDate: '{{ old('appointment_date') }}',
-    services: {{ Js::from($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'duration' => $s->duration_minutes, 'price' => $s->price])->values()) }},
+    services: {!! Js::from($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'duration' => $s->duration_minutes, 'price' => $s->price])->values()) !!},
     get minDate() { let d=new Date(); d.setHours(d.getHours()+1); return d.toISOString().slice(0,16); },
     get service() { return this.services.find(x => x.id == this.selectedService); },
     get formattedDate() {
