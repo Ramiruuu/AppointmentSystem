@@ -21,6 +21,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('appointments', AppointmentController::class)->only(['create', 'store', 'index']);
     Route::delete('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+    
+    // API routes
+    Route::get('/get-hospitals-by-service/{serviceId}', [AppointmentController::class, 'getHospitalsByService'])->name('api.hospitals.by-service');
+
+    // Cancel and complete routes
+    Route::get('/appointments/{appointment}/complete', [AppointmentController::class, 'markAsCompleted'])->name('appointments.complete');
+    Route::get('/appointments/{appointment}/cancel-page', [AppointmentController::class, 'cancelPage'])->name('appointments.cancel-page');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

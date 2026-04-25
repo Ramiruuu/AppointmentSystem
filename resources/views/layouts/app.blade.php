@@ -20,6 +20,20 @@
             font-family: 'Syne', sans-serif;
         }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 12px;
+            z-index: 1;
+        }
+
+        .leaflet-control-attribution {
+            font-size: 9px;
+        }
+    </style>
 </head>
 
 <body class="bg-[#f4f6fb] antialiased" x-data="{ sidebarOpen: false }">
@@ -78,18 +92,18 @@
                     <p class="text-[10px] text-white/25 font-semibold tracking-widest uppercase px-2 mb-2 mt-5">Admin</p>
                     <a href="{{ route('admin.appointments.index') }}"
                         class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group
-                          {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
+                              {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
                         <span
                             class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                                 {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
+                                     {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
                         All Appointments
                     </a>
                     <a href="{{ route('admin.services.index') }}"
                         class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group
-                          {{ request()->routeIs('admin.services.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
+                              {{ request()->routeIs('admin.services.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
                         <span
                             class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                                 {{ request()->routeIs('admin.services.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
+                                     {{ request()->routeIs('admin.services.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
                         Services
                     </a>
                 @endif
@@ -105,7 +119,8 @@
                     <div class="flex-1 min-w-0">
                         <div class="text-white text-[12px] font-medium truncate">{{ Auth::user()->name }}</div>
                         <div class="text-white/30 text-[10px]">
-                            {{ Auth::user()->isAdmin() ? 'Administrator' : 'Client' }}</div>
+                            {{ Auth::user()->isAdmin() ? 'Administrator' : 'Client' }}
+                        </div>
                     </div>
                     <svg class="w-3 h-3 text-white/30" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd"
@@ -175,11 +190,13 @@
                 <div class="sm:hidden px-6 pt-4">
                     @if(session('success'))
                         <div class="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl">
-                            {{ session('success') }}</div>
+                            {{ session('success') }}
+                        </div>
                     @endif
                     @if(session('error'))
                         <div class="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
-                            {{ session('error') }}</div>
+                            {{ session('error') }}
+                        </div>
                     @endif
                 </div>
             @endif

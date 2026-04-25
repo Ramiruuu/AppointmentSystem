@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\Service;
+use App\Models\Hospital;
 use App\Notifications\AppointmentNotification;
 use App\Mail\AppointmentBookedMail;
 use Illuminate\Http\Request;
@@ -16,8 +17,8 @@ class AppointmentController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $upcoming = $user->appointments()->with('service')->upcoming()->orderBy('appointment_date')->get();
-        $past = $user->appointments()->with('service')->past()->orderBy('appointment_date', 'desc')->get();
+        $upcoming = $user->appointments()->with('service', 'hospital')->upcoming()->orderBy('appointment_date')->get();
+        $past = $user->appointments()->with('service', 'hospital')->past()->orderBy('appointment_date', 'desc')->get();
 
         return view('appointments.index', compact('upcoming', 'past'));
     }
@@ -25,21 +26,21 @@ class AppointmentController extends Controller
     public function create()
     {
         $services = Service::active()->orderBy('name')->get();
-        $servicesJson = json_encode($services->map(fn($s) => [
-            'id' => $s->id,
-            'name' => $s->name,
-            'duration' => $s->duration_minutes,
-            'price' => $s->price
-        ])->values()->toArray());
-        
-        return view('appointments.create', compact('services', 'servicesJson'));
+        $hospitals = Hospital::where('is_active', true)->get();
+
+        return view('appointments.create', compact('services', 'hospitals'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'service_id'       => ['required', 'exists:services,id'],
+            'service_id' => ['required', 'exists:services,id'],
             'appointment_date' => ['required', 'date', 'after:' . now()->addHour()->toDateTimeString()],
+            'hospital_id' => ['nullable', 'exists:hospitals,id'],
+            'location_latitude' => ['nullable', 'numeric'],
+            'location_longitude' => ['nullable', 'numeric'],
+            'location_address' => ['nullable', 'string', 'max:500'],
+            'preferred_location' => ['nullable', 'string', 'max:255'],
         ]);
 
         $appointmentDate = \Carbon\Carbon::parse($request->appointment_date);
@@ -59,18 +60,39 @@ class AppointmentController extends Controller
 
         DB::beginTransaction();
         try {
+            // If hospital is selected, auto-fill location fields
+            $locationLatitude = $request->location_latitude;
+            $locationLongitude = $request->location_longitude;
+            $locationAddress = $request->location_address;
+            $preferredLocation = $request->preferred_location;
+
+            if ($request->hospital_id) {
+                $hospital = Hospital::find($request->hospital_id);
+                if ($hospital) {
+                    $locationLatitude = $hospital->latitude;
+                    $locationLongitude = $hospital->longitude;
+                    $locationAddress = $hospital->address;
+                    $preferredLocation = $hospital->name;
+                }
+            }
+
             $appointment = Appointment::create([
-                'user_id'          => $userId,
-                'service_id'       => $request->service_id,
+                'user_id' => $userId,
+                'service_id' => $request->service_id,
                 'appointment_date' => $appointmentDate,
-                'status'           => 'pending',
+                'status' => 'pending',
+                'hospital_id' => $request->hospital_id,
+                'location_latitude' => $locationLatitude,
+                'location_longitude' => $locationLongitude,
+                'location_address' => $locationAddress,
+                'preferred_location' => $preferredLocation,
             ]);
 
-            $appointment->load('service', 'user');
-            
+            $appointment->load('service', 'user', 'hospital');
+
             // Send email notification
             Mail::to($appointment->user->email)->send(new AppointmentBookedMail($appointment));
-            
+
             // Send database notification
             Auth::user()->notify(new AppointmentNotification($appointment, 'booked'));
 
@@ -94,7 +116,7 @@ class AppointmentController extends Controller
         ]);
 
         $appointment->update([
-            'status'              => 'cancelled',
+            'status' => 'cancelled',
             'cancellation_reason' => $request->cancellation_reason,
         ]);
 
@@ -102,5 +124,36 @@ class AppointmentController extends Controller
         Auth::user()->notify(new AppointmentNotification($appointment, 'cancelled'));
 
         return back()->with('success', 'Appointment cancelled successfully.');
+    }
+
+    public function getHospitalsByService($serviceId)
+    {
+        $service = Service::findOrFail($serviceId);
+        $hospitals = Hospital::where('is_active', true)
+            ->where('services_offered', 'LIKE', '%' . $service->name . '%')
+            ->get();
+
+        return response()->json($hospitals);
+    }
+    public function markAsCompleted(Appointment $appointment)
+    {
+        if ($appointment->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $appointment->update([
+            'status' => 'completed',
+        ]);
+
+        return redirect()->route('appointments.index')->with('success', 'Appointment marked as completed!');
+    }
+
+    public function cancelPage(Appointment $appointment)
+    {
+        if ($appointment->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return view('appointments.cancel', compact('appointment'));
     }
 }
