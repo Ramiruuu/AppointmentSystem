@@ -23,7 +23,14 @@ class AppointmentController extends Controller
     public function create()
     {
         $services = Service::active()->orderBy('name')->get();
-        return view('appointments.create', compact('services'));
+        $servicesJson = json_encode($services->map(fn($s) => [
+            'id' => $s->id,
+            'name' => $s->name,
+            'duration' => $s->duration_minutes,
+            'price' => $s->price
+        ])->values()->toArray());
+        
+        return view('appointments.create', compact('services', 'servicesJson'));
     }
 
     public function store(Request $request)
