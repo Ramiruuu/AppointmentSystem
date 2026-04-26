@@ -1,195 +1,114 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>BookEase — @yield('title', 'Dashboard')</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
-        rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookEase — @yield('title')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        body {
-            font-family: 'DM Sans', sans-serif;
-        }
-
-        .font-display {
-            font-family: 'Syne', sans-serif;
-        }
-    </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        #map {
-            height: 400px;
-            width: 100%;
-            border-radius: 12px;
-            z-index: 1;
-        }
-
-        .leaflet-control-attribution {
-            font-size: 9px;
-        }
-    </style>
 </head>
 
-<body class="bg-[#f4f6fb] antialiased" x-data="{ sidebarOpen: false }">
+<body class="bg-gray-50 text-gray-900 antialiased">
 
     <div class="flex min-h-screen">
 
-        <!-- Sidebar -->
-        <aside
-            class="w-[220px] bg-[#0f1117] flex flex-col flex-shrink-0 fixed inset-y-0 left-0 z-30 transition-transform duration-200"
-            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+        <!-- SIDEBAR -->
+        <aside class="w-52 shrink-0 bg-white border-r border-gray-200 flex flex-col fixed top-0 left-0 h-screen z-30">
 
             <!-- Logo -->
-            <div class="flex items-center gap-3 px-5 py-6 border-b border-white/5">
-                <div
-                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24">
-                        <path
-                            d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H5V9h14v12zM7 11h5v5H7z" />
-                    </svg>
-                </div>
-                <div>
-                    <div class="font-display font-bold text-white text-[15px] tracking-tight">BookEase</div>
-                    <div class="text-[10px] text-white/30 font-light">Appointment System</div>
-                </div>
+            <div class="px-5 py-5 border-b border-gray-100">
+                <div class="text-base font-semibold text-gray-900">BookEase</div>
+                <div class="text-xs text-gray-400 mt-0.5">Appointment System</div>
             </div>
 
             <!-- Nav -->
-            <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-                <p class="text-[10px] text-white/25 font-semibold tracking-widest uppercase px-2 mb-2 mt-2">Main</p>
-
+            <nav class="flex flex-col gap-1 px-3 py-4 flex-1">
                 <a href="{{ route('dashboard') }}"
-                    class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group
-                    {{ request()->routeIs('dashboard') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
-                    <span
-                        class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                            {{ request()->routeIs('dashboard') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition
+                      {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-800 font-medium' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800' }}">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
                     Dashboard
                 </a>
 
                 <a href="{{ route('appointments.index') }}"
-                    class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group
-                    {{ request()->routeIs('appointments.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
-                    <span
-                        class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                            {{ request()->routeIs('appointments.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition
+                      {{ request()->routeIs('appointments.index') ? 'bg-indigo-50 text-indigo-800 font-medium' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800' }}">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                     My Appointments
                 </a>
 
                 <a href="{{ route('appointments.create') }}"
-                    class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group text-white/45 hover:text-white/80 hover:bg-white/5">
-                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-white/20 group-hover:bg-white/40"></span>
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition
+                      {{ request()->routeIs('appointments.create') ? 'bg-indigo-50 text-indigo-800 font-medium' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800' }}">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
                     Book Appointment
                 </a>
 
+                <a href="{{ route('profile.edit') }}"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition
+                      {{ request()->routeIs('profile.*') ? 'bg-indigo-50 text-indigo-800 font-medium' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800' }}">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Profile
+                </a>
+
                 @if(Auth::user()->isAdmin())
-                    <p class="text-[10px] text-white/25 font-semibold tracking-widest uppercase px-2 mb-2 mt-5">Admin</p>
+                    <div class="mt-3 mb-1 px-3">
+                        <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">Admin</span>
+                    </div>
                     <a href="{{ route('admin.appointments.index') }}"
-                        class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group
-                                  {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
-                        <span
-                            class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                                         {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition text-gray-500 hover:bg-gray-100 hover:text-gray-800">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
                         All Appointments
                     </a>
                     <a href="{{ route('admin.services.index') }}"
-                        class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group
-                                  {{ request()->routeIs('admin.services.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
-                        <span
-                            class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                                         {{ request()->routeIs('admin.services.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition text-gray-500 hover:bg-gray-100 hover:text-gray-800">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
                         Services
                     </a>
                 @endif
             </nav>
 
-            <!-- User -->
-            <div class="px-4 py-4 border-t border-white/5" x-data="{ open: false }">
-                <button @click="open = !open" class="flex items-center gap-2.5 w-full text-left">
-                    <div
-                        class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-white text-[12px] font-medium truncate">{{ Auth::user()->name }}</div>
-                        <div class="text-white/30 text-[10px]">
-                            {{ Auth::user()->isAdmin() ? 'Administrator' : 'Client' }}
-                        </div>
-                    </div>
-                    <svg class="w-3 h-3 text-white/30" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </button>
-                <div x-show="open" @click.outside="open = false" x-transition
-                    class="absolute bottom-16 left-3 right-3 bg-[#181b24] border border-white/10 rounded-xl py-1.5 shadow-xl z-50">
-                    <a href="{{ route('profile.edit') }}"
-                        class="block px-4 py-2 text-[12px] text-white/60 hover:text-white hover:bg-white/5 transition">Profile
-                        Settings</a>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit"
-                            class="w-full text-left px-4 py-2 text-[12px] text-red-400 hover:bg-red-500/10 transition">Sign
-                            Out</button>
-                    </form>
-                </div>
+            <!-- User + Logout -->
+            <div class="px-4 py-4 border-t border-gray-100">
+                <div class="text-sm font-medium text-gray-800 truncate">{{ Auth::user()->name }}</div>
+                <div class="text-xs text-gray-400 mb-3">Patient</div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="text-xs text-gray-400 hover:text-red-500 transition">Sign out</button>
+                </form>
             </div>
         </aside>
 
-        <!-- Overlay -->
-        <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-20 md:hidden"></div>
-
-        <!-- Content -->
-        <div class="flex-1 md:ml-[220px] flex flex-col min-h-screen">
-
-            <!-- Topbar -->
-            <header
-                class="h-[60px] bg-white border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-10">
-                <div class="flex items-center gap-4">
-                    <button @click="sidebarOpen = true" class="md:hidden p-1.5 text-gray-400 hover:text-gray-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
-                    <h1 class="font-display font-bold text-gray-900 text-lg tracking-tight"></h1>
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('appointments.create') }}"
-                        class="inline-flex items-center gap-1.5 bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-violet-700 transition">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
-                        </svg>
-                        Book
-                    </a>
-                </div>
-            </header>
-
-            <!-- Page content with inline flash messages -->
-            <main class="flex-1 px-6 py-8">
-                @if(session()->has('success'))
-                    <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-                        <strong>✓ Success!</strong> {{ session('success') }}
-                    </div>
-                @endif
-
-                @if(session()->has('error'))
-                    <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                        <strong>✗ Error!</strong> {{ session('error') }}
-                    </div>
-                @endif
-
+        <!-- MAIN -->
+        <main class="flex-1 ml-52 min-h-screen">
+            <div class="max-w-5xl mx-auto px-8 py-8">
                 @yield('content')
-            </main>
-        </div>
+            </div>
+        </main>
+
     </div>
 
 </body>

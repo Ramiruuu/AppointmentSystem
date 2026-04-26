@@ -53,12 +53,13 @@ class Appointment extends Model
 
     public function scopeUpcoming($query)
     {
-        return $query->where('appointment_date', '>', now())->whereNotIn('status', ['cancelled']);
+        return $query->whereDate('appointment_date', '>=', now()->toDateString())
+                    ->whereNotIn('status', ['cancelled']);
     }
 
     public function scopePast($query)
     {
-        return $query->where('appointment_date', '<', now());
+        return $query->whereDate('appointment_date', '<', now()->toDateString());
     }
 
     public function getLocationDisplayAttribute()

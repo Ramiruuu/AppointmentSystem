@@ -2,285 +2,210 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    <!-- Flash Messages - Styled Version with Icons -->
+
+@php
+    $slotLabels = [
+        'morning_1'   => 'Morning · 7:00 AM – 9:00 AM',
+        'morning_2'   => 'Late Morning · 10:00 AM – 12:00 PM',
+        'afternoon_1' => 'Afternoon · 1:00 PM – 3:00 PM',
+        'afternoon_2' => 'Late Afternoon · 4:00 PM – 6:00 PM',
+    ];
+@endphp
+
+<div class="space-y-7">
+
+    {{-- SUCCESS --}}
     @if(session('success'))
-        <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg shadow-sm">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-green-700">{{ session('success') }}</p>
-                </div>
-                <div class="ml-auto pl-3">
-                    <button onclick="this.parentElement.parentElement.remove()" class="text-green-500 hover:text-green-700">
-                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </div>
+        <div class="flex items-start justify-between gap-4 bg-green-50 border-l-4 border-green-500 rounded-lg px-5 py-4">
+            <div>
+                <p class="text-sm font-semibold text-green-800">Appointment booked successfully!</p>
+                <p class="text-sm text-green-700 mt-0.5">{{ session('success') }}</p>
             </div>
+            <button onclick="this.closest('div.flex').remove()" class="text-green-500 hover:text-green-700 text-lg leading-none">&times;</button>
         </div>
     @endif
 
+    {{-- ERROR --}}
     @if(session('error'))
-        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg shadow-sm">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-red-700">{{ session('error') }}</p>
-                </div>
-                <div class="ml-auto pl-3">
-                    <button onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700">
-                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
+        <div class="flex items-start justify-between gap-4 bg-red-50 border-l-4 border-red-500 rounded-lg px-5 py-4">
+            <p class="text-sm text-red-700">{{ session('error') }}</p>
+            <button onclick="this.closest('div.flex').remove()" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
         </div>
     @endif
 
-    @php
-        $user = Auth::user();
-        $totalAppointments = $user->appointments()->count();
-        $upcomingAppointments = $user->appointments()->upcoming()->whereNotIn('status', ['cancelled'])->count();
-        $completedAppointments = $user->appointments()->where('status', 'completed')->count();
-        $cancelledAppointments = $user->appointments()->where('status', 'cancelled')->count();
-        $upcomingList = $user->appointments()->with('service')->upcoming()->whereNotIn('status', ['cancelled'])->orderBy('appointment_date')->limit(5)->get();
-
-        // Calculate percentages
-        $upcomingPercentage = $totalAppointments > 0 ? round(($upcomingAppointments / $totalAppointments) * 100) : 0;
-        $cancelledPercentage = $totalAppointments > 0 ? round(($cancelledAppointments / $totalAppointments) * 100) : 0;
-        $completedPercentage = $totalAppointments > 0 ? round(($completedAppointments / $totalAppointments) * 100) : 0;
-    @endphp
-
-    <div class="space-y-8">
-
-        <!-- Welcome Header -->
+    {{-- HEADER --}}
+    <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-semibold text-gray-900">Welcome back, {{ $user->name }}</h1>
-            <p class="text-sm text-gray-500 mt-1">Here's what's happening with your appointments</p>
+            <h1 class="text-xl font-semibold text-gray-900">Good day, {{ Auth::user()->name }}</h1>
+            <p class="text-sm text-gray-400 mt-0.5">Here's your appointment overview</p>
         </div>
+        <a href="{{ route('appointments.create') }}"
+            class="px-4 py-2 bg-indigo-900 text-indigo-50 text-sm font-medium rounded-lg hover:bg-indigo-800 transition">
+            + Book Appointment
+        </a>
+    </div>
 
-        <!-- Stats Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-white rounded-lg border border-gray-200 p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Total Appointments</p>
-                        <p class="text-3xl font-semibold text-gray-900 mt-2">{{ $totalAppointments }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-emerald-600 font-medium">{{ $completedPercentage }}%</p>
-                        <p class="text-xs text-gray-400 mt-1">completed</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg border border-gray-200 p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Upcoming</p>
-                        <p class="text-3xl font-semibold text-gray-900 mt-2">{{ $upcomingAppointments }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-blue-600 font-medium">{{ $upcomingPercentage }}%</p>
-                        <p class="text-xs text-gray-400 mt-1">of total</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg border border-gray-200 p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Completed</p>
-                        <p class="text-3xl font-semibold text-gray-900 mt-2">{{ $completedAppointments }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-emerald-600 font-medium">{{ $completedPercentage }}%</p>
-                        <p class="text-xs text-gray-400 mt-1">done</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg border border-gray-200 p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Cancelled</p>
-                        <p class="text-3xl font-semibold text-gray-900 mt-2">{{ $cancelledAppointments }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-rose-600 font-medium">{{ $cancelledPercentage }}%</p>
-                        <p class="text-xs text-gray-400 mt-1">cancelled</p>
-                    </div>
-                </div>
-            </div>
+    {{-- STATS --}}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl border border-gray-200 px-5 py-4">
+            <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total</p>
+            <p class="text-3xl font-semibold text-gray-900 mt-2">{{ $totalAppointments }}</p>
         </div>
-
-        @if($user->isAdmin())
-            <!-- Monthly Overview & Stats -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Monthly Appointments -->
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Monthly Appointments</h3>
-                    <div class="space-y-3">
-                        @php
-                            $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        @endphp
-                        @foreach(array_slice($months, 0, 6) as $index => $month)
-                            @php
-                                $monthNumber = $index + 1;
-                                $count = \App\Models\Appointment::whereMonth('appointment_date', $monthNumber)
-                                    ->whereYear('appointment_date', now()->year)
-                                    ->count();
-                                $maxCount = \App\Models\Appointment::whereYear('appointment_date', now()->year)->count();
-                                $percentage = $maxCount > 0 ? round(($count / $maxCount) * 100) : 0;
-                            @endphp
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-500 w-12">{{ $month }}</span>
-                                <div class="flex-1 mx-4">
-                                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div class="h-full bg-gray-800 rounded-full" style="width: {{ $percentage }}%"></div>
-                                    </div>
-                                </div>
-                                <span class="text-gray-900 font-medium w-8 text-right">{{ $count }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- Appointment Status Breakdown -->
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Appointment Status</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="text-gray-500">Pending</span>
-                                <span
-                                    class="text-gray-900 font-medium">{{ \App\Models\Appointment::where('status', 'pending')->count() }}</span>
-                            </div>
-                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-amber-500 rounded-full"
-                                    style="width: {{ $totalAppointments > 0 ? round((\App\Models\Appointment::where('status', 'pending')->count() / $totalAppointments) * 100) : 0 }}%">
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="text-gray-500">Confirmed</span>
-                                <span
-                                    class="text-gray-900 font-medium">{{ \App\Models\Appointment::where('status', 'confirmed')->count() }}</span>
-                            </div>
-                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-blue-600 rounded-full"
-                                    style="width: {{ $totalAppointments > 0 ? round((\App\Models\Appointment::where('status', 'confirmed')->count() / $totalAppointments) * 100) : 0 }}%">
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="text-gray-500">Completed</span>
-                                <span class="text-gray-900 font-medium">{{ $completedAppointments }}</span>
-                            </div>
-                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-emerald-600 rounded-full" style="width: {{ $completedPercentage }}%">
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="text-gray-500">Cancelled</span>
-                                <span class="text-gray-900 font-medium">{{ $cancelledAppointments }}</span>
-                            </div>
-                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-rose-600 rounded-full" style="width: {{ $cancelledPercentage }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <!-- Upcoming Bookings Table -->
-        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-sm font-semibold text-gray-900">Upcoming Bookings</h3>
-            </div>
-
-            @if($upcomingList->isEmpty())
-                <div class="py-12 text-center">
-                    <p class="text-gray-400 text-sm">No upcoming bookings</p>
-                    <a href="{{ route('appointments.create') }}"
-                        class="mt-2 inline-block text-sm text-gray-500 hover:text-gray-700">Book an appointment →</a>
-                </div>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr class="text-left">
-                                <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                                <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                                <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                                <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @foreach($upcomingList as $apt)
-                                <tr class="hover:bg-gray-50 transition">
-                                    <td class="px-6 py-4 font-medium text-gray-900">{{ $apt->service->name }}</td>
-                                    <td class="px-6 py-4 text-gray-500">{{ $apt->appointment_date->format('M d, Y') }}</td>
-                                    <td class="px-6 py-4 text-gray-500">{{ $apt->appointment_date->format('g:i A') }}</td>
-                                    <td class="px-6 py-4 text-gray-500">{{ $apt->service->duration_minutes }} min</td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full 
-                                                    @if($apt->status == 'pending') bg-amber-50 text-amber-700
-                                                    @elseif($apt->status == 'confirmed') bg-blue-50 text-blue-700
-                                                    @elseif($apt->status == 'completed') bg-emerald-50 text-emerald-700
-                                                    @else bg-rose-50 text-rose-700 @endif">
-                                            {{ ucfirst($apt->status) }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="{{ route('appointments.index') }}"
-                                            class="text-gray-400 hover:text-gray-600 transition">→</a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+        <div class="bg-indigo-50 rounded-xl px-5 py-4">
+            <p class="text-xs font-medium text-indigo-500 uppercase tracking-wider">Upcoming</p>
+            <p class="text-3xl font-semibold text-indigo-900 mt-2">{{ $upcomingAppointments }}</p>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="flex justify-end gap-3">
-            <a href="{{ route('appointments.create') }}"
-                class="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition">
-                Book Appointment
-            </a>
-            @if($user->isAdmin())
-                <button onclick="window.print()"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                    Generate Report
-                </button>
-            @endif
+        <div class="bg-green-50 rounded-xl px-5 py-4">
+            <p class="text-xs font-medium text-green-600 uppercase tracking-wider">Completed</p>
+            <p class="text-3xl font-semibold text-green-900 mt-2">{{ $completedAppointments }}</p>
+        </div>
+        <div class="bg-red-50 rounded-xl px-5 py-4">
+            <p class="text-xs font-medium text-red-500 uppercase tracking-wider">Cancelled</p>
+            <p class="text-3xl font-semibold text-red-900 mt-2">{{ $cancelledAppointments }}</p>
         </div>
     </div>
+
+    {{-- ADMIN CHARTS --}}
+    @if(Auth::user()->isAdmin())
+        @php
+            $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            $yearTotal = \App\Models\Appointment::whereYear('appointment_date', now()->year)->count();
+            $allTotal  = \App\Models\Appointment::count();
+            $statusRows = [
+                'pending'   => ['label' => 'Pending',   'color' => 'bg-amber-400'],
+                'confirmed' => ['label' => 'Confirmed', 'color' => 'bg-blue-500'],
+                'completed' => ['label' => 'Completed', 'color' => 'bg-green-500'],
+                'cancelled' => ['label' => 'Cancelled', 'color' => 'bg-red-400'],
+            ];
+        @endphp
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div class="bg-white border border-gray-200 rounded-xl px-6 py-5">
+                <p class="text-sm font-medium text-gray-700 mb-4">Monthly appointments ({{ now()->year }})</p>
+                <div class="space-y-3">
+                    @foreach(array_slice($months, 0, 6) as $i => $month)
+                        @php
+                            $cnt = \App\Models\Appointment::whereMonth('appointment_date', $i + 1)->whereYear('appointment_date', now()->year)->count();
+                            $pct = $yearTotal > 0 ? round(($cnt / $yearTotal) * 100) : 0;
+                        @endphp
+                        <div class="flex items-center gap-3 text-sm">
+                            <span class="text-gray-400 w-8">{{ $month }}</span>
+                            <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-gray-800 rounded-full" style="width: {{ $pct }}%"></div>
+                            </div>
+                            <span class="text-gray-700 font-medium w-5 text-right">{{ $cnt }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl px-6 py-5">
+                <p class="text-sm font-medium text-gray-700 mb-4">Appointment status</p>
+                <div class="space-y-4">
+                    @foreach($statusRows as $status => $info)
+                        @php
+                            $cnt = \App\Models\Appointment::where('status', $status)->count();
+                            $pct = $allTotal > 0 ? round(($cnt / $allTotal) * 100) : 0;
+                        @endphp
+                        <div>
+                            <div class="flex justify-between text-sm mb-1.5">
+                                <span class="text-gray-500">{{ $info['label'] }}</span>
+                                <span class="text-gray-800 font-medium">{{ $cnt }}</span>
+                            </div>
+                            <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full {{ $info['color'] }} rounded-full" style="width: {{ $pct }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- UPCOMING BOOKINGS TABLE --}}
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-900">Upcoming bookings</p>
+            <a href="{{ route('appointments.index') }}" class="text-xs text-indigo-600 hover:underline">View all</a>
+        </div>
+
+        @if($upcomingList->isEmpty())
+            <div class="py-16 text-center">
+                <p class="text-sm text-gray-400">No upcoming bookings yet.</p>
+                <a href="{{ route('appointments.create') }}" class="mt-2 inline-block text-sm text-indigo-600 hover:underline">Book an appointment</a>
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm" style="table-layout: fixed;">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[18%]">Service</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[13%]">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[22%]">Time Slot</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[16%]">Location</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[14%]">Queue No.</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[10%]">Payment</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-[7%]">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach($upcomingList as $apt)
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-5 py-4">
+                                    <p class="font-medium text-gray-900 truncate">{{ $apt->service->name ?? 'N/A' }}</p>
+                                    <p class="text-xs text-gray-400 mt-0.5">{{ $apt->service->duration_minutes ?? '-' }} min</p>
+                                </td>
+                                <td class="px-4 py-4 text-gray-500 text-xs">
+                                    {{ $apt->appointment_date->format('M d, Y') }}
+                                </td>
+                                <td class="px-4 py-4 text-gray-500 text-xs">
+                                    {{ $slotLabels[$apt->time_slot] ?? ucwords(str_replace('_', ' ', $apt->time_slot)) }}
+                                </td>
+                                <td class="px-4 py-4 text-xs">
+                                    <p class="text-gray-700 font-medium truncate">{{ $apt->hospital->name ?? $apt->preferred_location ?? 'N/A' }}</p>
+                                    @if($apt->hospital->address ?? false)
+                                        <p class="text-gray-400 mt-0.5 truncate">{{ $apt->hospital->address }}</p>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-4 text-xs">
+                                    <p class="font-medium text-gray-800">{{ $apt->queue_number ?? 'N/A' }}</p>
+                                    @if($apt->slot_position)
+                                        <p class="text-gray-400 mt-0.5">Position {{ $apt->slot_position }} of 10</p>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-4">
+                                    <p class="text-xs text-gray-600">{{ ucfirst(str_replace('_', ' ', $apt->payment_method ?? '—')) }}</p>
+                                    <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium
+                                        @if($apt->payment_status === 'paid') bg-green-100 text-green-800
+                                        @elseif($apt->payment_status === 'partial') bg-blue-100 text-blue-800
+                                        @else bg-gray-100 text-gray-500 @endif">
+                                        {{ ucfirst($apt->payment_status ?? 'unpaid') }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium
+                                        @if($apt->status === 'confirmed') bg-blue-100 text-blue-800
+                                        @elseif($apt->status === 'pending') bg-amber-100 text-amber-800
+                                        @elseif($apt->status === 'completed') bg-green-100 text-green-800
+                                        @else bg-red-100 text-red-700 @endif">
+                                        {{ ucfirst($apt->status) }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
+
+    {{-- ADMIN: GENERATE REPORT --}}
+    @if(Auth::user()->isAdmin())
+        <div class="flex justify-end">
+            <button onclick="window.print()"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                Generate Report
+            </button>
+        </div>
+    @endif
+
+</div>
 @endsection
