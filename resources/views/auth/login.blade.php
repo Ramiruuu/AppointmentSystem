@@ -74,14 +74,22 @@
                 </p>
             </div>
 
-            <div class="text-center lg:text-left mt-8 lg:mt-0">
-                <p class="text-white/40 text-xs tracking-wide mb-4">TRUSTED BY PROFESSIONALS</p>
-                <div class="flex flex-wrap justify-center lg:justify-start gap-6 opacity-50">
-                    <span class="text-white text-xs font-medium">Clinics</span>
-                    <span class="text-white text-xs font-medium">Salons</span>
-                    <span class="text-white text-xs font-medium">Consultants</span>
-                    <span class="text-white text-xs font-medium">Therapists</span>
-                    <span class="text-white text-xs font-medium">Coaches</span>
+            <!-- AESTHETIC: Trusted by Professionals section - redesigned -->
+            <div class="mt-16 lg:mt-20">
+                <!-- Divider line -->
+                <div class="flex items-center justify-center lg:justify-start gap-3 mb-6">
+                    <div class="h-px bg-white/20 w-8"></div>
+                    <p class="text-white/50 text-[11px] tracking-[0.2em] uppercase font-semibold">Trusted by Professionals</p>
+                    <div class="h-px bg-white/20 flex-1 hidden lg:block"></div>
+                </div>
+                
+                <!-- Professional badges with modern design -->
+                <div class="flex flex-wrap justify-center lg:justify-start gap-3">
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Clinics</span>
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Salons</span>
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Consultants</span>
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Therapists</span>
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Coaches</span>
                 </div>
             </div>
         </div>

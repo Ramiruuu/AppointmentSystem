@@ -102,13 +102,21 @@
                 </p>
             </div>
 
-            <div class="text-center lg:text-left mt-8 lg:mt-0">
-                <p class="text-white/40 text-xs tracking-wide mb-4">PERFECT FOR</p>
-                <div class="flex flex-wrap justify-center lg:justify-start gap-6 opacity-50">
-                    <span class="text-white text-xs font-medium">Small Business</span>
-                    <span class="text-white text-xs font-medium">Freelancers</span>
-                    <span class="text-white text-xs font-medium">Professionals</span>
-                    <span class="text-white text-xs font-medium">Teams</span>
+            <!-- AESTHETIC: Perfect For section - redesigned matching login page style -->
+            <div class="mt-16 lg:mt-20">
+                <!-- Divider line -->
+                <div class="flex items-center justify-center lg:justify-start gap-3 mb-6">
+                    <div class="h-px bg-white/20 w-8"></div>
+                    <p class="text-white/50 text-[11px] tracking-[0.2em] uppercase font-semibold">Perfect For</p>
+                    <div class="h-px bg-white/20 flex-1 hidden lg:block"></div>
+                </div>
+                
+                <!-- Professional badges with modern design -->
+                <div class="flex flex-wrap justify-center lg:justify-start gap-3">
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Small Business</span>
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Freelancers</span>
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Professionals</span>
+                    <span class="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-300 cursor-default">Teams</span>
                 </div>
             </div>
         </div>
