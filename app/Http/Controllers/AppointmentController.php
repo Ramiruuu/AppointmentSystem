@@ -9,8 +9,8 @@ use App\Notifications\AppointmentNotification;
 use App\Mail\AppointmentBookedMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class AppointmentController extends Controller
 {
@@ -33,39 +33,35 @@ class AppointmentController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'service_id' => ['required', 'exists:services,id'],
-            'appointment_date' => ['required', 'date', 'after:' . now()->addHour()->toDateTimeString()],
-            'hospital_id' => ['nullable', 'exists:hospitals,id'],
-            'location_latitude' => ['nullable', 'numeric'],
-            'location_longitude' => ['nullable', 'numeric'],
-            'location_address' => ['nullable', 'string', 'max:500'],
-            'preferred_location' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $appointmentDate = \Carbon\Carbon::parse($request->appointment_date);
-        $userId = Auth::id();
-
-        // Double-booking check: same user within 30 minutes
-        $conflict = Appointment::where('user_id', $userId)
-            ->whereNotIn('status', ['cancelled'])
-            ->whereBetween('appointment_date', [
-                $appointmentDate->copy()->subMinutes(30),
-                $appointmentDate->copy()->addMinutes(30),
-            ])->exists();
-
-        if ($conflict) {
-            return back()->withErrors(['appointment_date' => 'You already have an appointment within 30 minutes of this time.'])->withInput();
-        }
-
-        DB::beginTransaction();
         try {
-            // If hospital is selected, auto-fill location fields
-            $locationLatitude = $request->location_latitude;
-            $locationLongitude = $request->location_longitude;
-            $locationAddress = $request->location_address;
-            $preferredLocation = $request->preferred_location;
+            $request->validate([
+                'service_id'       => ['required', 'exists:services,id'],
+                'appointment_date' => ['required', 'date', 'after:' . now()->addHour()->toDateTimeString()],
+                'hospital_id'      => ['nullable', 'exists:hospitals,id'],
+                'payment_method'   => ['nullable', 'string'],
+            ]);
 
+            $appointmentDate = \Carbon\Carbon::parse($request->appointment_date);
+            $userId = Auth::id();
+
+            // Double-booking check
+            $conflict = Appointment::where('user_id', $userId)
+                ->whereNotIn('status', ['cancelled'])
+                ->whereBetween('appointment_date', [
+                    $appointmentDate->copy()->subMinutes(30),
+                    $appointmentDate->copy()->addMinutes(30),
+                ])->exists();
+
+            if ($conflict) {
+                return back()->withErrors(['appointment_date' => 'You already have an appointment within 30 minutes of this time.'])->withInput();
+            }
+
+            // Get hospital details if selected
+            $locationLatitude = null;
+            $locationLongitude = null;
+            $locationAddress = null;
+            $preferredLocation = null;
+            
             if ($request->hospital_id) {
                 $hospital = Hospital::find($request->hospital_id);
                 if ($hospital) {
@@ -76,33 +72,40 @@ class AppointmentController extends Controller
                 }
             }
 
+            // Create appointment
             $appointment = Appointment::create([
-                'user_id' => $userId,
-                'service_id' => $request->service_id,
-                'appointment_date' => $appointmentDate,
-                'status' => 'pending',
-                'hospital_id' => $request->hospital_id,
-                'location_latitude' => $locationLatitude,
+                'user_id'            => $userId,
+                'service_id'         => $request->service_id,
+                'appointment_date'   => $appointmentDate,
+                'status'             => 'pending',
+                'hospital_id'        => $request->hospital_id,
+                'location_latitude'  => $locationLatitude,
                 'location_longitude' => $locationLongitude,
-                'location_address' => $locationAddress,
+                'location_address'   => $locationAddress,
                 'preferred_location' => $preferredLocation,
+                'payment_status'     => 'unpaid',
+                'payment_method'     => $request->payment_method ?? null,
+                'amount_paid'        => 0,
             ]);
 
             $appointment->load('service', 'user', 'hospital');
-
-            // Send email notification
-            Mail::to($appointment->user->email)->send(new AppointmentBookedMail($appointment));
-
+            
+            // Send email notification (wrap in try-catch so booking doesn't fail if email fails)
+            try {
+                Mail::to($appointment->user->email)->send(new AppointmentBookedMail($appointment));
+            } catch (\Exception $e) {
+                Log::error('Email failed: ' . $e->getMessage());
+            }
+            
             // Send database notification
             Auth::user()->notify(new AppointmentNotification($appointment, 'booked'));
 
-            DB::commit();
+            return redirect()->route('dashboard')->with('success', 'Appointment booked successfully! A confirmation email has been sent to your inbox.');
+
         } catch (\Exception $e) {
-            DB::rollBack();
+            Log::error('Appointment booking failed: ' . $e->getMessage());
             return back()->with('error', 'Failed to book appointment. Please try again.')->withInput();
         }
-
-        return redirect()->route('appointments.index')->with('success', 'Appointment booked successfully! A confirmation email has been sent to your inbox.');
     }
 
     public function cancel(Request $request, Appointment $appointment)
@@ -135,6 +138,7 @@ class AppointmentController extends Controller
 
         return response()->json($hospitals);
     }
+
     public function markAsCompleted(Appointment $appointment)
     {
         if ($appointment->user_id !== Auth::id()) {

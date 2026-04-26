@@ -31,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Payment update route
     Route::patch('/appointments/{appointment}/payment', [AppointmentController::class, 'updatePayment'])->name('appointments.update-payment');
+
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

@@ -92,18 +92,18 @@
                     <p class="text-[10px] text-white/25 font-semibold tracking-widest uppercase px-2 mb-2 mt-5">Admin</p>
                     <a href="{{ route('admin.appointments.index') }}"
                         class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group
-                              {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
+                                  {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
                         <span
                             class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                                     {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
+                                         {{ request()->routeIs('admin.appointments.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
                         All Appointments
                     </a>
                     <a href="{{ route('admin.services.index') }}"
                         class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-medium transition-all group
-                              {{ request()->routeIs('admin.services.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
+                                  {{ request()->routeIs('admin.services.*') ? 'bg-violet-500/20 text-white' : 'text-white/45 hover:text-white/80 hover:bg-white/5' }}">
                         <span
                             class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                                     {{ request()->routeIs('admin.services.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
+                                         {{ request()->routeIs('admin.services.*') ? 'bg-violet-400' : 'bg-white/20 group-hover:bg-white/40' }}"></span>
                         Services
                     </a>
                 @endif
@@ -160,20 +160,8 @@
                         </svg>
                     </button>
                     <h1 class="font-display font-bold text-gray-900 text-lg tracking-tight"></h1>
-                    </h1>
                 </div>
                 <div class="flex items-center gap-3">
-                    @if(session('success'))
-                        <div
-                            class="hidden sm:flex items-center gap-1.5 bg-green-50 border border-green-100 text-green-700 text-xs px-3 py-1.5 rounded-full font-medium">
-                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            {{ session('success') }}
-                        </div>
-                    @endif
                     <a href="{{ route('appointments.create') }}"
                         class="inline-flex items-center gap-1.5 bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-violet-700 transition">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -185,24 +173,20 @@
                 </div>
             </header>
 
-            <!-- Flash on mobile -->
-            @if(session('success') || session('error'))
-                <div class="sm:hidden px-6 pt-4">
-                    @if(session('success'))
-                        <div class="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl">
-                            {{ session('success') }}
-                        </div>
-                    @endif
-                    @if(session('error'))
-                        <div class="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
-                            {{ session('error') }}
-                        </div>
-                    @endif
-                </div>
-            @endif
-
-            <!-- Page content -->
+            <!-- Page content with inline flash messages -->
             <main class="flex-1 px-6 py-8">
+                @if(session()->has('success'))
+                    <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                        <strong>✓ Success!</strong> {{ session('success') }}
+                    </div>
+                @endif
+
+                @if(session()->has('error'))
+                    <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        <strong>✗ Error!</strong> {{ session('error') }}
+                    </div>
+                @endif
+
                 @yield('content')
             </main>
         </div>
