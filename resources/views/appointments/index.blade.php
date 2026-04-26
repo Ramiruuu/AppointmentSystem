@@ -4,7 +4,13 @@
 @section('content')
     @php $statusColors = ['pending' => 'amber', 'confirmed' => 'emerald', 'completed' => 'blue', 'cancelled' => 'red']; @endphp
 
-    <div x-data="{ tab: 'upcoming', cancelModal: false, cancelId: null }">
+    <div x-data="{ 
+        tab: 'upcoming', 
+        cancelModal: false, 
+        cancelId: null,
+        paymentModal: false,
+        selectedAppointment: null
+    }">
 
         <div class="flex gap-1.5 bg-white border border-gray-100 rounded-xl p-1 w-fit mb-6 shadow-sm">
             <button @click="tab='upcoming'"
@@ -52,11 +58,14 @@
                                     Price</th>
                                 <th
                                     class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                                    Payment</th>
+                                <th
+                                    class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                                     Status</th>
                                 <th
                                     class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                                     Action</th>
-                            </tr>
+                             </>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
                             @foreach($upcoming as $apt)
@@ -69,16 +78,35 @@
                                     </td>
                                     <td class="px-6 py-4 text-gray-500 font-medium">₱{{ number_format($apt->service->price, 2) }}</td>
                                     <td class="px-6 py-4">
+                                        @if($apt->payment_status == 'paid')
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700">
+                                                Paid
+                                            </span>
+                                        @elseif($apt->payment_status == 'partial')
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700">
+                                                Partial (₱{{ number_format($apt->amount_paid, 2) }})
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-50 text-red-700">
+                                                Unpaid
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
                                         <span
                                             class="px-2.5 py-1 rounded-full text-xs font-semibold bg-{{ $c }}-50 text-{{ $c }}-700">{{ ucfirst($apt->status) }}</span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        @if(in_array($apt->status, ['pending', 'confirmed']) && $apt->appointment_date->isFuture())
-                                            <button @click="cancelModal=true; cancelId={{ $apt->id }}"
-                                                class="text-red-500 hover:text-red-700 text-sm font-medium transition">Cancel</button>
-                                        @else
-                                            <span class="text-gray-200">—</span>
-                                        @endif
+                                        <div class="flex gap-2">
+                                            @if(in_array($apt->status, ['pending', 'confirmed']) && $apt->appointment_date->isFuture())
+                                                <button @click="cancelModal=true; cancelId={{ $apt->id }}"
+                                                    class="text-red-500 hover:text-red-700 text-sm font-medium transition">Cancel</button>
+                                            @endif
+                                            @if($apt->payment_status != 'paid')
+                                                <button @click="paymentModal=true; selectedAppointment={{ $apt->id }}"
+                                                    class="text-violet-500 hover:text-violet-700 text-sm font-medium transition">Pay</button>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -113,8 +141,11 @@
                                     Price</th>
                                 <th
                                     class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                                    Payment</th>
+                                <th
+                                    class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                                     Status</th>
-                            </>
+                             </>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
                             @foreach($past as $apt)
@@ -126,6 +157,21 @@
                                         {{ $apt->preferred_location ?? ($apt->location_address ? substr($apt->location_address, 0, 40) : 'Not specified') }}
                                     </td>
                                     <td class="px-6 py-4 text-gray-500 font-medium">₱{{ number_format($apt->service->price, 2) }}</td>
+                                    <td class="px-6 py-4">
+                                        @if($apt->payment_status == 'paid')
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700">
+                                                Paid
+                                            </span>
+                                        @elseif($apt->payment_status == 'partial')
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700">
+                                                Partial (₱{{ number_format($apt->amount_paid, 2) }})
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-50 text-red-700">
+                                                Unpaid
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4">
                                         <span
                                             class="px-2.5 py-1 rounded-full text-xs font-semibold bg-{{ $c }}-50 text-{{ $c }}-700">{{ ucfirst($apt->status) }}</span>
@@ -162,6 +208,55 @@
                         <button type="button" @click="cancelModal=false"
                             class="px-5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition font-medium">Go
                             Back</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Payment Modal -->
+        <div x-show="paymentModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+            <div @click.outside="paymentModal=false" class="bg-white rounded-2xl max-w-md w-full p-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-2">Update Payment</h3>
+                <form method="POST" :action="`/appointments/${selectedAppointment}/payment`">
+                    @csrf
+                    @method('PATCH')
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                            <select name="payment_method" required class="w-full border border-gray-200 rounded-lg px-3 py-2">
+                                <option value="cash">Cash</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="gcash">GCash</option>
+                                <option value="paymaya">PayMaya</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Amount Paid (₱)</label>
+                            <input type="number" name="amount_paid" step="0.01" required
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2"
+                                placeholder="0.00">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Reference Number</label>
+                            <input type="text" name="payment_reference"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2"
+                                placeholder="GCash/Bank reference #">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                            <textarea name="payment_notes" rows="2"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2"
+                                placeholder="Additional payment notes..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 mt-6">
+                        <button type="submit" class="flex-1 bg-violet-600 text-white py-2 rounded-lg font-semibold">Submit Payment</button>
+                        <button type="button" @click="paymentModal=false" class="px-4 py-2 border border-gray-200 rounded-lg">Cancel</button>
                     </div>
                 </form>
             </div>

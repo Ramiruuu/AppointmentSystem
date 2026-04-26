@@ -19,11 +19,18 @@ class Appointment extends Model
         'location_longitude',
         'location_address',
         'preferred_location',
-        'hospital_id'
+        'hospital_id',
+        'payment_status',
+        'payment_method',
+        'amount_paid',
+        'payment_reference',
+        'payment_notes',
+        'paid_at'
     ];
 
     protected $casts = [
         'appointment_date' => 'datetime',
+        'paid_at' => 'datetime',
     ];
 
     public function user()
@@ -63,5 +70,16 @@ class Appointment extends Model
             return $this->hospital->name . ' - ' . $this->hospital->address;
         }
         return 'Not specified';
+    }
+    
+    // Optional: Add a helper method to check payment status
+    public function isPaid()
+    {
+        return $this->payment_status === 'paid';
+    }
+    
+    public function isPendingPayment()
+    {
+        return $this->payment_status === 'pending';
     }
 }

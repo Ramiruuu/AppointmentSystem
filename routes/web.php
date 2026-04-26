@@ -28,6 +28,9 @@ Route::middleware(['auth'])->group(function () {
     // Cancel and complete routes
     Route::get('/appointments/{appointment}/complete', [AppointmentController::class, 'markAsCompleted'])->name('appointments.complete');
     Route::get('/appointments/{appointment}/cancel-page', [AppointmentController::class, 'cancelPage'])->name('appointments.cancel-page');
+
+    // Payment update route
+    Route::patch('/appointments/{appointment}/payment', [AppointmentController::class, 'updatePayment'])->name('appointments.update-payment');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

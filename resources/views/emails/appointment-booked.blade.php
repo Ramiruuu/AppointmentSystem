@@ -363,18 +363,31 @@
                 </div>
 
                 @if($appointment->service->price)
-                    <!-- Updated price display with the new detail-row format -->
                     <div class="detail-row">
                         <span class="detail-label">Price</span>
                         <span class="detail-value">₱{{ number_format($appointment->service->price, 2) }}</span>
                     </div>
                 @endif
+
+                <!-- Payment Status Row -->
+                <div class="detail-row">
+                    <span class="detail-label">Payment Status</span>
+                    <span class="detail-value">
+                        @if($appointment->payment_status == 'paid')
+                            Paid (₱{{ number_format($appointment->amount_paid, 2) }})
+                        @elseif($appointment->payment_status == 'partial')
+                            Partial (₱{{ number_format($appointment->amount_paid, 2) }})
+                        @else
+                            Unpaid - Please pay at the clinic
+                        @endif
+                    </span>
+                </div>
             </div>
 
             <div class="button-group">
-                <a href="{{ route('appointments.index') }}" class="btn-primary">📋 MY APPOINTMENTS</a>
-                <a href="{{ route('appointments.complete', $appointment->id) }}" class="btn-outline">✓ COMPLETED</a>
-                <a href="{{ route('appointments.cancel-page', $appointment->id) }}" class="btn-secondary">✕ CANCEL</a>
+                <a href="{{ route('appointments.index') }}" class="btn-primary">MY APPOINTMENTS</a>
+                <a href="{{ route('appointments.complete', $appointment->id) }}" class="btn-outline">COMPLETED</a>
+                <a href="{{ route('appointments.cancel-page', $appointment->id) }}" class="btn-secondary">CANCEL</a>
             </div>
         </div>
 

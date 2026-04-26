@@ -156,4 +156,46 @@ class AppointmentController extends Controller
 
         return view('appointments.cancel', compact('appointment'));
     }
+
+    public function updatePayment(Request $request, Appointment $appointment)
+    {
+        if ($appointment->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'payment_method' => ['required', 'string', 'in:cash,bank_transfer,gcash,paymaya'],
+            'payment_reference' => ['required_if:payment_method,bank_transfer,gcash,paymaya', 'nullable', 'string', 'max:100'],
+            'amount_paid' => ['required', 'numeric', 'min:0'],
+            'payment_notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $service = $appointment->service;
+        $totalAmount = $service->price ?? 0;
+        $amountPaid = $request->amount_paid;
+
+        // Determine payment status
+        if ($amountPaid >= $totalAmount && $totalAmount > 0) {
+            $paymentStatus = 'paid';
+            $paidAt = now();
+        } elseif ($amountPaid > 0 && $amountPaid < $totalAmount) {
+            $paymentStatus = 'partial';
+            $paidAt = null;
+        } else {
+            $paymentStatus = 'unpaid';
+            $paidAt = null;
+        }
+
+        $appointment->update([
+            'payment_status' => $paymentStatus,
+            'payment_method' => $request->payment_method,
+            'payment_reference' => $request->payment_reference,
+            'amount_paid' => $amountPaid,
+            'payment_notes' => $request->payment_notes,
+            'paid_at' => $paidAt,
+        ]);
+
+        $message = $paymentStatus === 'paid' ? 'Payment completed successfully!' : 'Payment information updated.';
+        return back()->with('success', $message);
+    }
 }

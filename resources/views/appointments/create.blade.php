@@ -6,6 +6,7 @@
         selectedService: '{{ old('service_id') }}',
         selectedDate: '{{ old('appointment_date') }}',
         selectedHospital: '{{ old('hospital_id') }}',
+        selectedPaymentMethod: '{{ old('payment_method') }}',
         services: {{ Js::from($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'duration' => $s->duration_minutes, 'price' => $s->price])->values()) }},
         hospitals: {{ Js::from($hospitals) }},
         get minDate() { let d = new Date(); d.setHours(d.getHours() + 1); return d.toISOString().slice(0, 16); },
@@ -28,6 +29,11 @@
         get formattedDate() {
             if (!this.selectedDate) return null;
             return new Date(this.selectedDate).toLocaleString('en-US', {dateStyle: 'long', timeStyle: 'short'});
+        },
+        get showReferenceField() {
+            return this.selectedPaymentMethod === 'bank_transfer' || 
+                   this.selectedPaymentMethod === 'gcash' || 
+                   this.selectedPaymentMethod === 'paymaya';
         }
     }">
         <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
@@ -81,7 +87,6 @@
                         <template x-for="hospital in filteredHospitals" :key="hospital.id">
                             <div x-show="hospital.id == selectedHospital">
                                 <div class="flex items-start gap-2">
-                                    <span class="text-blue-600 text-sm">🏥</span>
                                     <div class="flex-1">
                                         <p class="text-xs font-medium text-blue-900" x-text="hospital.name"></p>
                                         <p class="text-xs text-blue-700 mt-0.5" x-text="'📍 ' + hospital.address"></p>
@@ -100,6 +105,44 @@
                     <input type="datetime-local" name="appointment_date" x-model="selectedDate" :min="minDate" required
                         class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-gray-900 transition">
                     <p class="text-gray-400 text-xs mt-1.5">Appointments must be at least 1 hour from now.</p>
+                </div>
+
+                <!-- Payment Section -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Method</label>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" x-model="selectedPaymentMethod" value="cash" class="text-violet-600">
+                            <span class="text-sm">Cash (Pay at clinic)</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" x-model="selectedPaymentMethod" value="bank_transfer" class="text-violet-600">
+                            <span class="text-sm">Bank Transfer</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" x-model="selectedPaymentMethod" value="gcash" class="text-violet-600">
+                            <span class="text-sm">GCash</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" x-model="selectedPaymentMethod" value="paymaya" class="text-violet-600">
+                            <span class="text-sm">PayMaya</span>
+                        </label>
+                    </div>
+                    
+                    <div x-show="showReferenceField" x-transition>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Reference Number</label>
+                        <input type="text" name="payment_reference" value="{{ old('payment_reference') }}"
+                            class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                            placeholder="Enter transaction reference number">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Notes (Optional)</label>
+                        <textarea name="payment_notes" rows="2"
+                            class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                            placeholder="Any additional notes about your payment...">{{ old('payment_notes') }}</textarea>
+                    </div>
                 </div>
 
                 <!-- Hidden location fields -->
@@ -126,6 +169,8 @@
                         <span class="text-right font-medium" x-text="formattedDate"></span>
                         <span class="text-white/60">Price</span>
                         <span class="text-right font-medium" x-text="service?.price ? '₱' + parseFloat(service.price).toFixed(2) : 'Free'"></span>
+                        <span class="text-white/60">Payment Method</span>
+                        <span class="text-right font-medium" x-text="selectedPaymentMethod ? selectedPaymentMethod.replace('_', ' ').toUpperCase() : 'Not selected'"></span>
                         <span class="text-white/60">Status after booking</span>
                         <span class="text-right font-medium">Pending</span>
                     </div>
