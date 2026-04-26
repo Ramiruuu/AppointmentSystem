@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
@@ -25,7 +26,7 @@ class AppointmentController extends Controller
 
     public function create()
     {
-        $services = Service::active()->orderBy('name')->get();
+        $services = Service::where('is_active', true)->orderBy('name')->get();
         $hospitals = Hospital::where('is_active', true)->get();
 
         return view('appointments.create', compact('services', 'hospitals'));
@@ -36,41 +37,33 @@ class AppointmentController extends Controller
         try {
             $request->validate([
                 'service_id'       => ['required', 'exists:services,id'],
-                'appointment_date' => ['required', 'date', 'after:' . now()->addHour()->toDateTimeString()],
-                'hospital_id'      => ['nullable', 'exists:hospitals,id'],
-                'payment_method'   => ['nullable', 'string'],
+                'appointment_date' => ['required', 'date'],
+                'hospital_id'      => ['required', 'exists:hospitals,id'],
+                'time_slot'        => ['required', 'string'],
+                'payment_method'   => ['required', 'string'],
             ]);
 
-            $appointmentDate = \Carbon\Carbon::parse($request->appointment_date);
+            $appointmentDate = Carbon::parse($request->appointment_date);
             $userId = Auth::id();
+            $timeSlot = $request->time_slot;
 
-            // Double-booking check
-            $conflict = Appointment::where('user_id', $userId)
+            // Check if slot is still available (max 10 per slot)
+            $slotCount = Appointment::whereDate('appointment_date', $appointmentDate)
+                ->where('time_slot', $timeSlot)
+                ->where('hospital_id', $request->hospital_id)
                 ->whereNotIn('status', ['cancelled'])
-                ->whereBetween('appointment_date', [
-                    $appointmentDate->copy()->subMinutes(30),
-                    $appointmentDate->copy()->addMinutes(30),
-                ])->exists();
+                ->count();
 
-            if ($conflict) {
-                return back()->withErrors(['appointment_date' => 'You already have an appointment within 30 minutes of this time.'])->withInput();
+            if ($slotCount >= 10) {
+                return back()->with('error', 'This time slot is already full. Please choose another slot.')->withInput();
             }
 
-            // Get hospital details if selected
-            $locationLatitude = null;
-            $locationLongitude = null;
-            $locationAddress = null;
-            $preferredLocation = null;
-            
-            if ($request->hospital_id) {
-                $hospital = Hospital::find($request->hospital_id);
-                if ($hospital) {
-                    $locationLatitude = $hospital->latitude;
-                    $locationLongitude = $hospital->longitude;
-                    $locationAddress = $hospital->address;
-                    $preferredLocation = $hospital->name;
-                }
-            }
+            // Get queue position
+            $slotPosition = $slotCount + 1;
+            $queueNumber = $appointmentDate->format('Ymd') . '-' . substr($timeSlot, 0, 1) . '-' . str_pad($slotPosition, 2, '0', STR_PAD_LEFT);
+
+            // Get hospital details
+            $hospital = Hospital::find($request->hospital_id);
 
             // Create appointment
             $appointment = Appointment::create([
@@ -79,32 +72,106 @@ class AppointmentController extends Controller
                 'appointment_date'   => $appointmentDate,
                 'status'             => 'pending',
                 'hospital_id'        => $request->hospital_id,
-                'location_latitude'  => $locationLatitude,
-                'location_longitude' => $locationLongitude,
-                'location_address'   => $locationAddress,
-                'preferred_location' => $preferredLocation,
+                'location_latitude'  => $hospital->latitude ?? null,
+                'location_longitude' => $hospital->longitude ?? null,
+                'location_address'   => $hospital->address ?? null,
+                'preferred_location' => $hospital->name ?? null,
+                'time_slot'          => $timeSlot,
+                'queue_number'       => $queueNumber,
+                'slot_position'      => $slotPosition,
                 'payment_status'     => 'unpaid',
-                'payment_method'     => $request->payment_method ?? null,
+                'payment_method'     => $request->payment_method,
                 'amount_paid'        => 0,
+                'payment_reference'  => $request->payment_reference ?? null,
+                'payment_notes'      => $request->payment_notes ?? null,
             ]);
 
             $appointment->load('service', 'user', 'hospital');
             
-            // Send email notification (wrap in try-catch so booking doesn't fail if email fails)
             try {
                 Mail::to($appointment->user->email)->send(new AppointmentBookedMail($appointment));
             } catch (\Exception $e) {
                 Log::error('Email failed: ' . $e->getMessage());
             }
             
-            // Send database notification
             Auth::user()->notify(new AppointmentNotification($appointment, 'booked'));
 
-            return redirect()->route('dashboard')->with('success', 'Appointment booked successfully! A confirmation email has been sent to your inbox.');
+            return redirect()->route('dashboard')->with('success', "Appointment booked successfully! Queue: {$queueNumber}, Position: {$slotPosition} of 10.");
 
         } catch (\Exception $e) {
             Log::error('Appointment booking failed: ' . $e->getMessage());
             return back()->with('error', 'Failed to book appointment. Please try again.')->withInput();
+        }
+    }
+
+    public function getTimeSlots(Request $request)
+    {
+        try {
+            $date = $request->get('date');
+            $hospitalId = $request->get('hospital_id');
+            
+            if (!$date) {
+                return response()->json([]);
+            }
+            
+            $timeSlots = [
+                'morning_1' => [
+                    'key' => 'morning_1',
+                    'label' => 'Morning (7:00 AM - 9:00 AM)',
+                    'start' => '07:00',
+                    'end' => '09:00'
+                ],
+                'morning_2' => [
+                    'key' => 'morning_2',
+                    'label' => 'Late Morning (10:00 AM - 12:00 PM)',
+                    'start' => '10:00',
+                    'end' => '12:00'
+                ],
+                'afternoon_1' => [
+                    'key' => 'afternoon_1',
+                    'label' => 'Afternoon (1:00 PM - 3:00 PM)',
+                    'start' => '13:00',
+                    'end' => '15:00'
+                ],
+                'afternoon_2' => [
+                    'key' => 'afternoon_2',
+                    'label' => 'Late Afternoon (4:00 PM - 6:00 PM)',
+                    'start' => '16:00',
+                    'end' => '18:00'
+                ],
+            ];
+            
+            $result = [];
+            
+            foreach ($timeSlots as $key => $slot) {
+                $query = Appointment::whereDate('appointment_date', $date)
+                    ->where('time_slot', $key)
+                    ->whereNotIn('status', ['cancelled']);
+                
+                if ($hospitalId && $hospitalId !== 'null' && $hospitalId !== '' && $hospitalId !== 'undefined') {
+                    $query->where('hospital_id', $hospitalId);
+                }
+                
+                $count = $query->count();
+                $available = 10 - $count;
+                
+                $result[$key] = [
+                    'key' => $key,
+                    'label' => $slot['label'],
+                    'start' => $slot['start'],
+                    'end' => $slot['end'],
+                    'total_booked' => $count,
+                    'available' => max(0, $available),
+                    'is_full' => $available <= 0,
+                    'percentage' => round(($count / 10) * 100)
+                ];
+            }
+            
+            return response()->json($result);
+            
+        } catch (\Exception $e) {
+            Log::error('Time slot error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
@@ -123,42 +190,7 @@ class AppointmentController extends Controller
             'cancellation_reason' => $request->cancellation_reason,
         ]);
 
-        $appointment->load('service');
-        Auth::user()->notify(new AppointmentNotification($appointment, 'cancelled'));
-
         return back()->with('success', 'Appointment cancelled successfully.');
-    }
-
-    public function getHospitalsByService($serviceId)
-    {
-        $service = Service::findOrFail($serviceId);
-        $hospitals = Hospital::where('is_active', true)
-            ->where('services_offered', 'LIKE', '%' . $service->name . '%')
-            ->get();
-
-        return response()->json($hospitals);
-    }
-
-    public function markAsCompleted(Appointment $appointment)
-    {
-        if ($appointment->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $appointment->update([
-            'status' => 'completed',
-        ]);
-
-        return redirect()->route('appointments.index')->with('success', 'Appointment marked as completed!');
-    }
-
-    public function cancelPage(Appointment $appointment)
-    {
-        if ($appointment->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        return view('appointments.cancel', compact('appointment'));
     }
 
     public function updatePayment(Request $request, Appointment $appointment)
@@ -168,17 +200,14 @@ class AppointmentController extends Controller
         }
 
         $request->validate([
-            'payment_method' => ['required', 'string', 'in:cash,bank_transfer,gcash,paymaya'],
-            'payment_reference' => ['required_if:payment_method,bank_transfer,gcash,paymaya', 'nullable', 'string', 'max:100'],
+            'payment_method' => ['required', 'string'],
             'amount_paid' => ['required', 'numeric', 'min:0'],
-            'payment_notes' => ['nullable', 'string', 'max:500'],
+            'payment_reference' => ['nullable', 'string'],
         ]);
 
-        $service = $appointment->service;
-        $totalAmount = $service->price ?? 0;
+        $totalAmount = $appointment->service->price ?? 0;
         $amountPaid = $request->amount_paid;
-
-        // Determine payment status
+        
         if ($amountPaid >= $totalAmount && $totalAmount > 0) {
             $paymentStatus = 'paid';
             $paidAt = now();
@@ -199,7 +228,6 @@ class AppointmentController extends Controller
             'paid_at' => $paidAt,
         ]);
 
-        $message = $paymentStatus === 'paid' ? 'Payment completed successfully!' : 'Payment information updated.';
-        return back()->with('success', $message);
+        return back()->with('success', 'Payment information updated.');
     }
 }

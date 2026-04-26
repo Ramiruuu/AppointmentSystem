@@ -2,215 +2,228 @@
 @section('title', 'Book Appointment')
 
 @section('content')
-    <div class="max-w-2xl mx-auto" x-data="{
-        selectedService: '{{ old('service_id') }}',
-        selectedDate: '{{ old('appointment_date') }}',
-        selectedHospital: '{{ old('hospital_id') }}',
-        selectedPaymentMethod: '{{ old('payment_method') }}',
-        services: {{ Js::from($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'duration' => $s->duration_minutes, 'price' => $s->price])->values()) }},
-        hospitals: {{ Js::from($hospitals) }},
-        get minDate() { let d = new Date(); d.setHours(d.getHours() + 1); return d.toISOString().slice(0, 16); },
-        get service() { return this.services.find(x => x.id == this.selectedService); },
-        get filteredHospitals() {
-            if (!this.selectedService) return [];
-            const serviceName = this.service?.name;
-            if (!serviceName) return [];
-            return this.hospitals.filter(h => {
-                if (!h.services_offered) return false;
-                let services = [];
-                try {
-                    services = typeof h.services_offered === 'string' ? JSON.parse(h.services_offered) : h.services_offered;
-                } catch(e) {
-                    services = [];
-                }
-                return services.includes(serviceName) || services.includes('General Checkup');
-            });
-        },
-        get formattedDate() {
-            if (!this.selectedDate) return null;
-            return new Date(this.selectedDate).toLocaleString('en-US', {dateStyle: 'long', timeStyle: 'short'});
-        },
-        get showReferenceField() {
-            return this.selectedPaymentMethod === 'bank_transfer' || 
-                   this.selectedPaymentMethod === 'gcash' || 
-                   this.selectedPaymentMethod === 'paymaya';
-        }
-    }">
-        <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-            <div class="px-8 pt-8 pb-6 border-b border-gray-50">
-                <h2 class="font-display font-bold text-xl text-gray-900">Book an Appointment</h2>
-                <p class="text-gray-400 text-sm mt-1">Choose a service, hospital, and pick your preferred time slot.</p>
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-8 pt-8 pb-6 border-b border-gray-100">
+            <h2 class="text-xl font-bold text-gray-900">Book an Appointment</h2>
+            <p class="text-sm text-gray-500 mt-1">Choose a service, hospital, date, and time slot.</p>
+        </div>
+
+        @if($errors->any())
+            <div class="mx-8 mt-4 p-4 bg-red-50 border border-red-100 rounded-xl">
+                @foreach($errors->all() as $error)
+                    <p class="text-red-600 text-sm">• {{ $error }}</p>
+                @endforeach
             </div>
+        @endif
 
-            @if($errors->any())
-                <div class="mx-8 mt-6 bg-red-50 border border-red-100 rounded-xl p-4">
-                    @foreach($errors->all() as $error)
-                        <p class="text-red-600 text-sm">• {{ $error }}</p>
-                    @endforeach
-                </div>
-            @endif
+        @if(session('error'))
+            <div class="mx-8 mt-4 p-4 bg-red-50 border border-red-100 rounded-xl">
+                <p class="text-red-600 text-sm">• {{ session('error') }}</p>
+            </div>
+        @endif
 
-            <form method="POST" action="{{ route('appointments.store') }}" class="px-8 py-6 space-y-5">
-                @csrf
+        <form method="POST" action="{{ route('appointments.store') }}" class="px-8 py-6">
+            @csrf
 
-                <!-- Service Selection -->
+            <div class="space-y-5">
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Service</label>
-                    <select name="service_id" x-model="selectedService" required
-                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white text-gray-900 transition">
-                        <option value="">— Choose a service —</option>
+                    <select name="service_id" required
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white">
+                        <option value="">Choose a service</option>
                         @foreach($services as $s)
                             <option value="{{ $s->id }}" {{ old('service_id') == $s->id ? 'selected' : '' }}>
-                                {{ $s->name }} ({{ $s->duration_minutes }} min{{ $s->price ? ' · ₱' . number_format($s->price, 2) : '' }})
+                                {{ $s->name }} ({{ $s->duration_minutes }} min - ₱{{ number_format($s->price, 2) }})
                             </option>
                         @endforeach
                     </select>
                 </div>
 
-                <!-- Hospital Selection -->
-                <div x-show="selectedService">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Hospital/Clinic</label>
-                    <select name="hospital_id" x-model="selectedHospital" required
-                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white text-gray-900 transition">
-                        <option value="">— Choose a hospital —</option>
-                        <template x-for="hospital in filteredHospitals" :key="hospital.id">
-                            <option :value="hospital.id" x-text="hospital.name + ' - ' + hospital.address"></option>
-                        </template>
-                    </select>
-                    
-                    <div x-show="filteredHospitals.length === 0 && selectedService" class="mt-2 p-3 bg-yellow-50 rounded-xl border border-yellow-200">
-                        <p class="text-xs text-yellow-700">No hospitals available for this service. Please select another service.</p>
-                    </div>
-                    
-                    <!-- Hospital Details -->
-                    <div x-show="selectedHospital" class="mt-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
-                        <template x-for="hospital in filteredHospitals" :key="hospital.id">
-                            <div x-show="hospital.id == selectedHospital">
-                                <div class="flex items-start gap-2">
-                                    <div class="flex-1">
-                                        <p class="text-xs font-medium text-blue-900" x-text="hospital.name"></p>
-                                        <p class="text-xs text-blue-700 mt-0.5" x-text="'📍 ' + hospital.address"></p>
-                                        <p class="text-xs text-blue-600 mt-0.5" x-text="'📞 ' + (hospital.phone || 'Not available')"></p>
-                                        <p class="text-xs text-blue-600" x-text="'🕒 ' + (hospital.operating_hours || '24/7')"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- Date & Time -->
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Date & Time</label>
-                    <input type="datetime-local" name="appointment_date" x-model="selectedDate" :min="minDate" required
-                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-gray-900 transition">
-                    <p class="text-gray-400 text-xs mt-1.5">Appointments must be at least 1 hour from now.</p>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Hospital/Clinic</label>
+                    <select name="hospital_id" required
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 bg-white"
+                        id="hospitalSelect">
+                        <option value="">Choose a hospital</option>
+                        @foreach($hospitals as $h)
+                            <option value="{{ $h->id }}" {{ old('hospital_id') == $h->id ? 'selected' : '' }}>
+                                {{ $h->name }} - {{ $h->address }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
-                <!-- Payment Section -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Date</label>
+                    <input type="date" name="appointment_date" id="appointmentDate" required
+                        min="{{ now()->format('Y-m-d') }}"
+                        value="{{ old('appointment_date') }}"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Select Time Slot</label>
+                    <div id="timeSlotsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    <input type="hidden" name="time_slot" id="selectedTimeSlot" required>
+                </div>
+
                 <div class="space-y-3">
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Method</label>
-                    
                     <div class="grid grid-cols-2 gap-3">
-                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
-                            <input type="radio" name="payment_method" x-model="selectedPaymentMethod" value="cash" class="text-violet-600">
+                        <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" value="cash" class="text-violet-600" checked>
                             <span class="text-sm">Cash (Pay at clinic)</span>
                         </label>
-                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
-                            <input type="radio" name="payment_method" x-model="selectedPaymentMethod" value="bank_transfer" class="text-violet-600">
+                        <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" value="bank_transfer" class="text-violet-600">
                             <span class="text-sm">Bank Transfer</span>
                         </label>
-                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
-                            <input type="radio" name="payment_method" x-model="selectedPaymentMethod" value="gcash" class="text-violet-600">
+                        <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" value="gcash" class="text-violet-600">
                             <span class="text-sm">GCash</span>
                         </label>
-                        <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
-                            <input type="radio" name="payment_method" x-model="selectedPaymentMethod" value="paymaya" class="text-violet-600">
+                        <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" value="paymaya" class="text-violet-600">
                             <span class="text-sm">PayMaya</span>
                         </label>
                     </div>
-                    
-                    <div x-show="showReferenceField" x-transition>
+
+                    <div id="referenceField" class="hidden mt-4">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Reference Number</label>
-                        <input type="text" name="payment_reference" value="{{ old('payment_reference') }}"
-                            class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                        <input type="text" name="payment_reference"
+                            class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm"
                             placeholder="Enter transaction reference number">
                     </div>
-                    
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Notes (Optional)</label>
-                        <textarea name="payment_notes" rows="2"
-                            class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-                            placeholder="Any additional notes about your payment...">{{ old('payment_notes') }}</textarea>
-                    </div>
                 </div>
 
-                <!-- Hidden location fields -->
-                <input type="hidden" name="location_latitude" id="locationLatitude">
-                <input type="hidden" name="location_longitude" id="locationLongitude">
-                <input type="hidden" name="location_address" id="locationAddress">
-                <input type="hidden" name="preferred_location" id="preferredLocation">
-
-                <!-- Preview -->
-                <div x-show="selectedService && selectedDate && selectedHospital" x-transition:enter="transition ease-out duration-200"
-                    x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
-                    class="bg-gradient-to-br from-violet-600 to-purple-700 rounded-xl p-5 text-white">
-                    <p class="text-[10px] font-bold tracking-widest uppercase opacity-60 mb-3">Booking Summary</p>
-                    <p class="font-display font-bold text-lg" x-text="service?.name"></p>
-                    <p class="text-white/60 text-sm mt-0.5" x-text="service?.duration + ' minute session'"></p>
-                    <template x-for="hospital in filteredHospitals" :key="hospital.id">
-                        <div x-show="hospital.id == selectedHospital">
-                            <p class="text-white/80 text-sm mt-2" x-text="'🏥 ' + hospital.name"></p>
-                            <p class="text-white/60 text-xs" x-text="hospital.address"></p>
-                        </div>
-                    </template>
-                    <div class="mt-4 pt-4 border-t border-white/15 grid grid-cols-2 gap-y-2 text-sm">
-                        <span class="text-white/60">Date & Time</span>
-                        <span class="text-right font-medium" x-text="formattedDate"></span>
-                        <span class="text-white/60">Price</span>
-                        <span class="text-right font-medium" x-text="service?.price ? '₱' + parseFloat(service.price).toFixed(2) : 'Free'"></span>
-                        <span class="text-white/60">Payment Method</span>
-                        <span class="text-right font-medium" x-text="selectedPaymentMethod ? selectedPaymentMethod.replace('_', ' ').toUpperCase() : 'Not selected'"></span>
-                        <span class="text-white/60">Status after booking</span>
-                        <span class="text-right font-medium">Pending</span>
-                    </div>
-                </div>
-
-                <div class="flex gap-3 pt-2">
+                <div class="flex gap-3 pt-4">
                     <button type="submit"
                         class="flex-1 bg-violet-600 text-white py-3 rounded-xl font-semibold text-sm hover:bg-violet-700 transition">
                         Confirm Booking
                     </button>
                     <a href="{{ route('appointments.index') }}"
-                        class="px-5 py-3 border border-gray-200 text-gray-500 rounded-xl text-sm hover:bg-gray-50 transition font-medium">
+                        class="px-6 py-3 border border-gray-200 text-gray-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition">
                         Cancel
                     </a>
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const hospitalSelect = document.querySelector('select[name="hospital_id"]');
-            if (hospitalSelect) {
-                hospitalSelect.addEventListener('change', function() {
-                    const hospitals = {{ Js::from($hospitals) }};
-                    const hospital = hospitals.find(h => h.id == this.value);
-                    
-                    if (hospital) {
-                        document.getElementById('locationLatitude').value = hospital.latitude || '';
-                        document.getElementById('locationLongitude').value = hospital.longitude || '';
-                        document.getElementById('locationAddress').value = hospital.address || '';
-                        document.getElementById('preferredLocation').value = hospital.name || '';
-                    } else {
-                        document.getElementById('locationLatitude').value = '';
-                        document.getElementById('locationLongitude').value = '';
-                        document.getElementById('locationAddress').value = '';
-                        document.getElementById('preferredLocation').value = '';
-                    }
-                });
+            <input type="hidden" name="location_latitude" id="locationLatitude">
+            <input type="hidden" name="location_longitude" id="locationLongitude">
+            <input type="hidden" name="location_address" id="locationAddress">
+            <input type="hidden" name="preferred_location" id="preferredLocation">
+        </form>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const referenceField = document.getElementById('referenceField');
+            if (this.value === 'bank_transfer' || this.value === 'gcash' || this.value === 'paymaya') {
+                referenceField.classList.remove('hidden');
+            } else {
+                referenceField.classList.add('hidden');
             }
         });
-    </script>
+    });
+
+    document.querySelector('select[name="hospital_id"]')?.addEventListener('change', function() {
+        const hospitals = @json($hospitals);
+        const hospital = hospitals.find(h => h.id == this.value);
+        if (hospital) {
+            document.getElementById('locationLatitude').value = hospital.latitude || '';
+            document.getElementById('locationLongitude').value = hospital.longitude || '';
+            document.getElementById('locationAddress').value = hospital.address || '';
+            document.getElementById('preferredLocation').value = hospital.name || '';
+        }
+    });
+
+    function fetchTimeSlots() {
+        const date = document.getElementById('appointmentDate')?.value;
+        const hospitalId = document.querySelector('select[name="hospital_id"]')?.value || '';
+        
+        if (!date) return;
+        
+        const container = document.getElementById('timeSlotsContainer');
+        container.innerHTML = '<div class="col-span-2 text-center py-8 text-gray-400">Loading time slots...</div>';
+        
+        fetch(`/get-time-slots?date=${date}&hospital_id=${hospitalId}`)
+            .then(response => response.json())
+            .then(slots => {
+                container.innerHTML = '';
+                
+                if (slots.error) {
+                    container.innerHTML = '<div class="col-span-2 text-center py-8 text-red-500">Error loading slots</div>';
+                    return;
+                }
+                
+                const slotsArray = Object.values(slots);
+                if (slotsArray.length === 0) {
+                    container.innerHTML = '<div class="col-span-2 text-center py-8 text-gray-400">No time slots available</div>';
+                    return;
+                }
+                
+                slotsArray.forEach(slot => {
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = `p-4 border-2 rounded-xl cursor-pointer transition-all ${slot.is_full ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-60' : 'hover:border-violet-500 hover:bg-violet-50 border-gray-200'}`;
+                    
+                    let barColor = 'bg-green-500';
+                    if (slot.percentage >= 80) barColor = 'bg-red-500';
+                    else if (slot.percentage >= 50) barColor = 'bg-yellow-500';
+                    
+                    slotDiv.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <div class="font-semibold text-gray-900">${slot.label}</div>
+                                <div class="text-xs text-gray-500 mt-1">${slot.start} - ${slot.end}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm font-bold ${slot.is_full ? 'text-red-600' : 'text-green-600'}">
+                                    ${slot.available} / 10 available
+                                </div>
+                                <div class="text-xs text-gray-400">${slot.total_booked} booked</div>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="${barColor} h-2.5 rounded-full" style="width: ${slot.percentage}%"></div>
+                        </div>
+                        ${slot.is_full ? '<div class="text-xs text-red-500 mt-3 text-center font-medium">SLOT FULL</div>' : ''}
+                    `;
+                    
+                    if (!slot.is_full) {
+                        slotDiv.onclick = () => {
+                            document.getElementById('selectedTimeSlot').value = slot.key;
+                            document.querySelectorAll('#timeSlotsContainer > div').forEach(el => {
+                                el.classList.remove('border-violet-500', 'bg-violet-50');
+                                el.classList.add('border-gray-200');
+                            });
+                            slotDiv.classList.remove('border-gray-200');
+                            slotDiv.classList.add('border-violet-500', 'bg-violet-50');
+                        };
+                    }
+                    container.appendChild(slotDiv);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                container.innerHTML = '<div class="col-span-2 text-center py-8 text-red-500">Error loading time slots</div>';
+            });
+    }
+
+    document.getElementById('appointmentDate')?.addEventListener('change', function() {
+        fetchTimeSlots();
+    });
+
+    document.querySelector('select[name="hospital_id"]')?.addEventListener('change', function() {
+        if (document.getElementById('appointmentDate')?.value) {
+            fetchTimeSlots();
+        }
+    });
+
+    if (document.getElementById('appointmentDate')?.value) {
+        fetchTimeSlots();
+    }
+</script>
 @endsection

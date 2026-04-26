@@ -15,23 +15,15 @@ Route::middleware(['auth'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
-    Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('appointments', AppointmentController::class)->only(['create', 'store', 'index']);
     Route::delete('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
-    
-    // API routes
-    Route::get('/get-hospitals-by-service/{serviceId}', [AppointmentController::class, 'getHospitalsByService'])->name('api.hospitals.by-service');
-
-    // Cancel and complete routes
-    Route::get('/appointments/{appointment}/complete', [AppointmentController::class, 'markAsCompleted'])->name('appointments.complete');
-    Route::get('/appointments/{appointment}/cancel-page', [AppointmentController::class, 'cancelPage'])->name('appointments.cancel-page');
-
-    // Payment update route
     Route::patch('/appointments/{appointment}/payment', [AppointmentController::class, 'updatePayment'])->name('appointments.update-payment');
-
+    
+    Route::get('/get-time-slots', [AppointmentController::class, 'getTimeSlots'])->name('api.time-slots');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

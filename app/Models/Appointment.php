@@ -25,7 +25,10 @@ class Appointment extends Model
         'amount_paid',
         'payment_reference',
         'payment_notes',
-        'paid_at'
+        'paid_at',
+        'time_slot',
+        'queue_number',
+        'slot_position'
     ];
 
     protected $casts = [

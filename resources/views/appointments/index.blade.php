@@ -67,27 +67,14 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-100">
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Service</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Date & Time</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Location</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Price</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Payment</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Status</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Action</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Service</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Queue #</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Date & Time</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Price</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Payment</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Action</th>
                          </>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -95,6 +82,10 @@
                             @php $c = $statusColors[$apt->status] ?? 'gray'; @endphp
                             <tr class="hover:bg-gray-50/50 transition">
                                 <td class="px-6 py-4 font-medium text-gray-900">{{ $apt->service->name }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="font-mono text-sm font-semibold text-violet-600">#{{ $apt->queue_number ?? 'N/A' }}</span>
+                                    <div class="text-xs text-gray-400">Slot {{ $apt->slot_position ?? '?' }}/10</div>
+                                </td>
                                 <td class="px-6 py-4 text-gray-400">{{ $apt->appointment_date->format('M d, Y · g:i A') }}</td>
                                 <td class="px-6 py-4 text-gray-400">
                                     {{ $apt->preferred_location ?? ($apt->location_address ? substr($apt->location_address, 0, 40) : 'Not specified') }}
@@ -150,31 +141,24 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-100">
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Service</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Date & Time</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Location</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Price</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Payment</th>
-                            <th
-                                class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                                Status</th>
-                         </>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Service</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Queue #</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Date & Time</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Price</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Payment</th>
+                            <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                        </table>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @foreach($past as $apt)
                             @php $c = $statusColors[$apt->status] ?? 'gray'; @endphp
                             <tr class="hover:bg-gray-50/50 transition">
                                 <td class="px-6 py-4 font-medium text-gray-900">{{ $apt->service->name }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="font-mono text-sm font-semibold text-violet-600">#{{ $apt->queue_number ?? 'N/A' }}</span>
+                                    <div class="text-xs text-gray-400">Slot {{ $apt->slot_position ?? '?' }}/10</div>
+                                </td>
                                 <td class="px-6 py-4 text-gray-400">{{ $apt->appointment_date->format('M d, Y · g:i A') }}</td>
                                 <td class="px-6 py-4 text-gray-400">
                                     {{ $apt->preferred_location ?? ($apt->location_address ? substr($apt->location_address, 0, 40) : 'Not specified') }}
