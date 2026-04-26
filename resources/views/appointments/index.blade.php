@@ -49,6 +49,9 @@
                                     Location</th>
                                 <th
                                     class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                                    Price</th>
+                                <th
+                                    class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                                     Status</th>
                                 <th
                                     class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
@@ -64,6 +67,7 @@
                                     <td class="px-6 py-4 text-gray-400">
                                         {{ $apt->preferred_location ?? ($apt->location_address ? substr($apt->location_address, 0, 40) : 'Not specified') }}
                                     </td>
+                                    <td class="px-6 py-4 text-gray-500 font-medium">₱{{ number_format($apt->service->price, 2) }}</td>
                                     <td class="px-6 py-4">
                                         <span
                                             class="px-2.5 py-1 rounded-full text-xs font-semibold bg-{{ $c }}-50 text-{{ $c }}-700">{{ ucfirst($apt->status) }}</span>
@@ -106,8 +110,11 @@
                                     Location</th>
                                 <th
                                     class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                                    Price</th>
+                                <th
+                                    class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                                     Status</th>
-                            </tr>
+                            </>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
                             @foreach($past as $apt)
@@ -118,6 +125,7 @@
                                     <td class="px-6 py-4 text-gray-400">
                                         {{ $apt->preferred_location ?? ($apt->location_address ? substr($apt->location_address, 0, 40) : 'Not specified') }}
                                     </td>
+                                    <td class="px-6 py-4 text-gray-500 font-medium">₱{{ number_format($apt->service->price, 2) }}</td>
                                     <td class="px-6 py-4">
                                         <span
                                             class="px-2.5 py-1 rounded-full text-xs font-semibold bg-{{ $c }}-50 text-{{ $c }}-700">{{ ucfirst($apt->status) }}</span>

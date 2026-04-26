@@ -36,7 +36,7 @@
                         {{ $service->duration_minutes }} min</span>
                     @if($service->price)
                         <span
-                            class="bg-gray-50 border border-gray-100 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-lg">${{ number_format($service->price, 2) }}</span>
+                            class="bg-gray-50 border border-gray-100 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-lg">₱{{ number_format($service->price, 2) }}</span>
                     @endif
                 </div>
 

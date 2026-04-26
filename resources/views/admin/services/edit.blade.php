@@ -28,7 +28,7 @@
                     <input type="number" name="duration_minutes" value="{{ old('duration_minutes', $service->duration_minutes) }}" min="1" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Price (₱)</label>
                     <input type="number" name="price" value="{{ old('price', $service->price) }}" step="0.01" min="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>

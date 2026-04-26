@@ -55,7 +55,7 @@
                         <option value="">— Choose a service —</option>
                         @foreach($services as $s)
                             <option value="{{ $s->id }}" {{ old('service_id') == $s->id ? 'selected' : '' }}>
-                                {{ $s->name }} ({{ $s->duration_minutes }} min{{ $s->price ? ' · $' . number_format($s->price, 2) : '' }})
+                                {{ $s->name }} ({{ $s->duration_minutes }} min{{ $s->price ? ' · ₱' . number_format($s->price, 2) : '' }})
                             </option>
                         @endforeach
                     </select>
@@ -125,7 +125,7 @@
                         <span class="text-white/60">Date & Time</span>
                         <span class="text-right font-medium" x-text="formattedDate"></span>
                         <span class="text-white/60">Price</span>
-                        <span class="text-right font-medium" x-text="service?.price ? '$' + parseFloat(service.price).toFixed(2) : 'Free'"></span>
+                        <span class="text-right font-medium" x-text="service?.price ? '₱' + parseFloat(service.price).toFixed(2) : 'Free'"></span>
                         <span class="text-white/60">Status after booking</span>
                         <span class="text-right font-medium">Pending</span>
                     </div>
